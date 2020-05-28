@@ -10,7 +10,7 @@ from tqdm import tqdm
 from PIL import Image
 
 
-def parse(url, saveto, resizeas=None, **kwargs):
+def parse(url, saveto, resizeas=-1, main_resize=-1, **kwargs):
     mainpage = BeautifulSoup( requests.get(url).text, features="lxml" )
     
     lis = mainpage.select('li.FnStickerPreviewItem')
@@ -30,6 +30,13 @@ def parse(url, saveto, resizeas=None, **kwargs):
                 height = resizeas
             img.resize((width, height)).save( saveto / f"{i:02d}.png")
 
+    main_imgbytes = requests.get( mainpage.select('img.FnImage')[0].get('src') ).content
+    ( saveto / "main.png" ).open('wb').write(main_imgbytes)
+    if main_resize > 0:
+        main_img = Image.open(io.BytesIO(main_imgbytes))
+        main_img.resize((100, 100)).save( saveto / "main_resize.png")
+
+
 
 
 
@@ -39,6 +46,7 @@ def main():
     parser.add_argument('--saveto', type=Path)
 
     parser.add_argument('--resizeas', type=int, default=-1)
+    parser.add_argument('--main_resize', type=int, default=100)
     parser.add_argument('--overwrite', action='store_true', default=False)
 
     args = parser.parse_args()
